@@ -64,7 +64,7 @@ class Request {
                     continue; // or return false, throw new InvalidArgumentException
             }
             $data = file_get_contents($v);
-            $v = end(explode(DIRECTORY_SEPARATOR, $v));
+            $v = basename($v);
 //        $v = call_user_func("end", explode(DIRECTORY_SEPARATOR, $v));
             $k = str_replace($disallow, "_", $k);
             $v = str_replace($disallow, "_", $v);

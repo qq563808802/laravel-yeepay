@@ -37,7 +37,7 @@
 ### Laravel应用
 1. 注册 `ServiceProvider`:
 ```php
-YeePay\YeePayServiceProvider::class,
+YeePay\YeePay\YeePayServiceProvider::class,
 ```
 
 2. 创建配置和迁移文件
@@ -54,7 +54,7 @@ php artisan migrate
 
 5.添加门面到`config/app.php`中的`aliases`部分:
 ```php
-'YeePay' => YeePay\Facades\YeePay::class,
+'YeePay' => YeePay\YeePay\Facades\YeePay::class,
 ```
 
 ### Lumen应用
@@ -68,5 +68,27 @@ $app->register(YeePay\YeePayServiceProvider::class);
 ## 快速使用
 
 ### 创建支付
+    app('yeepay')->pay->add($post)
+###
 
-### 
+###创建子账号
+        $post = ['requestid' => 'real_order|||3305' . rand(11111,999999),
+                'bindmobile' => '12345678901',
+                'customertype' => 'PERSON',
+                'signedname' => '掌柜通测试',
+                'linkman' => ' 张三',
+                'idcard' => '123456789012345678',
+                'businesslicence' => '11113333',
+                'legalperson' => '张三',
+                'minsettleamount' => '1',
+                'riskreserveday' => '1',
+                'bankaccountnumber' => '1234567890123456',
+                'bankname' => ' 招商银行股份有限公司杭州分行',
+                'accountname' => ' 张三',
+                'bankaccounttype' => 'PrivateCash',
+                'bankprovince' => '浙江',
+                'bankcity' => '杭州',
+                'deposit' => '',
+                'email' => '',
+            ];
+        app('yeepay')->ledger->register($post)

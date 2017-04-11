@@ -29,7 +29,7 @@ class YeePay extends Container
      */
     protected $providers = [
        ServiceProviders\PayServiceProvider::class,
-       ServiceProviders\PayServiceProvider::class,
+       ServiceProviders\LedgerServiceProvider::class,
     ];
 
     /**

@@ -23,7 +23,7 @@ class LedgerServiceProvider implements ServiceProviderInterface
     public function register(Container $pimple)
     {
         $pimple['ledger'] = function ($pimple) {
-            return new Ledger();
+            return new Ledger($pimple['config']);
         };
     }
 }

@@ -38,6 +38,8 @@ class ApiRequest {
 
     public $needResponseHmac;
 
+    public $mustFillRequest;
+
     protected $config;
 
     public function __construct($config) {
@@ -45,7 +47,7 @@ class ApiRequest {
     }
 
     public function setUrl($url) {
-        $this->requestUrl = $url;
+        $this->requestUrl = $this->config['baseUrl'] . $url;
     }
 
     public function setNeedRequestHmac($needRequestHmac)
@@ -62,12 +64,50 @@ class ApiRequest {
     }
 
 
+    public function setMustFillRequest($mustFillRequest)
+    {
+        $this->mustFillRequest = $mustFillRequest;
+    }
 
 
-    public function setPost($post,$needRequestHmac,$needRequest) {
 
-        $this->needRequestHmac = $needRequestHmac;
-        $this->postField = Util::getPostData($post,$needRequestHmac,$needRequest);
+    public function setPost($post) {
+
+        $this->postField = $this->getPostData($post);
+    }
+
+    public function getPostData($post) {
+        //生成签名
+        $hmacData["customernumber"] = $this->config['account'];
+        foreach ( $this->needRequestHmac as $hKey => $hValue ) {
+            $v = "";
+            //判断$queryData中是否存在此索引并且是否可访问
+            if ( isset($post[$hValue])) {
+                $v = $post[$hValue];
+            }
+            $hmacData[$hValue] = $v;
+        }
+        $hmac = Util::getHmac($hmacData,$this->config['merchantPrivateKey']);
+        $dataMap["customernumber"] = $this->config['account'];;//商户号
+
+        foreach ( $this->needRequest as $rKey => $rValue ) {
+
+            $v = "";
+            //判断$queryData中是否存在此索引并且是否可访问
+            if (isset($post[$rValue])) {
+
+                $v = $post[$rValue];
+            }
+            //取得对应加密的明文的值
+            $dataMap[$rValue] = $v;
+        }
+        $dataMap["hmac"] = $hmac;
+
+        //转换成json格式
+        $dataJsonString = Util::cn_json_encode($dataMap);
+        $data = Util::getAes($dataJsonString, $this->config['aesKey']);
+        $postfields = array("customernumber" => $this->config['account'], "data" => $data);
+        return $postfields;
     }
 
     public function setFile($file) {
@@ -76,7 +116,8 @@ class ApiRequest {
 
     public function send() {
        $this->response =  (new Request($this->requestUrl,$this->postField,$this->postFile))->send();
-       return $this->receviceResponse();
+
+        return $this->receviceResponse();
     }
 
     public function receviceResponse() {
@@ -92,7 +133,7 @@ class ApiRequest {
 									 . ", $responseJsonArray["code"]);
         }
 
-        $responseData = Util::getDeAes($responseJsonArray["data"],Config::getAesKey());
+        $responseData = Util::getDeAes($responseJsonArray["data"],$this->config['aesKey']);
         $result = json_decode($responseData, true);
         //进行UTF-8->GBK转码
         $resultLocale = array();
@@ -102,7 +143,7 @@ class ApiRequest {
                 $resultLocale[$rKey] = $rValue;
             }else
             {
-                $resultLocale[$rKey][0]=cn_json_encode($resultLocale);
+                $resultLocale[$rKey][0]=Util::cn_json_encode($resultLocale);
             }
 
         }
@@ -115,9 +156,9 @@ class ApiRequest {
             throw new Exception("response error, errmsg = [" . $resultLocale["msg"] . "], errcode = [" . $resultLocale["code"] . "].", $result["code"]);
         }
 
-        if ( $result["customernumber"] != Config::getAccount() ) {
+        if ( $result["customernumber"] != $this->config['account'] ) {
 
-            throw new Exception("customernumber not equals, request is [" .  Config::getAccount()  . "], response is [" . $result["customernumber"] . "].");
+            throw new Exception("customernumber not equals, request is [" .  $this->config['account'] . "], response is [" . $result["customernumber"] . "].");
         }
 
         //验证返回签名
@@ -136,7 +177,7 @@ class ApiRequest {
             //$hmacData[$hKey] = $v;
             $hmacData[$hKey] = $v;
         }
-        $hmac = Util::getHmac($hmacData, Config::getPrivateKey());
+        $hmac = Util::getHmac($hmacData, $this->config['merchantPrivateKey']);
 
         if ( $hmac != $result["hmac"] ) {
 

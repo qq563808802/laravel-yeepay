@@ -1,6 +1,6 @@
 <?php
 
-namespace Yeepay\YeePay\Util;
+namespace YeePay\YeePay\Util;
 
 
 use Closure;

@@ -5,43 +5,12 @@
  * Date: 2017/3/30
  * Time: 10:30
  */
-namespace Yeepay\YeePay\Util;
+namespace YeePay\YeePay\Util;
 use YeePay\YeePay\Util\CryptAES;
 
 class Util {
 
-    public static function getPostData($post,$needRequestHmac,$needRequest) {
-        //生成签名
-        $hmacData["customernumber"] = config('yeepay.account');
-        foreach ( $needRequestHmac as $hKey => $hValue ) {
-            $v = "";
-            //判断$queryData中是否存在此索引并且是否可访问
-            if ( isset($post[$hValue])) {
-                $v = $post[$hValue];
-            }
-            $hmacData[$hValue] = $v;
-        }
-        $hmac = self::getHmac($hmacData,config('yeepay.merchantPrivateKey'));
-        $dataMap["customernumber"] = config('yeepay.account');//商户号
-        foreach ( $needRequest as $rKey => $rValue ) {
 
-            $v = "";
-            //判断$queryData中是否存在此索引并且是否可访问
-            if (isset($post[$rValue])) {
-
-                $v = $post[$rValue];
-            }
-            //取得对应加密的明文的值
-            $dataMap[$rValue] = $v;
-        }
-        $dataMap["hmac"] = $hmac;
-
-        //转换成json格式
-        $dataJsonString = self::cn_json_encode($dataMap);
-        $data = self::getAes($dataJsonString, substr(config('yeepay.merchantPrivateKey'), 0, 16));
-        $postfields = array("customernumber" => config('yeepay.account'), "data" => $data);
-        return $postfields;
-    }
 
     public static function getHmac(array $dataArray,$key) {
         if ( is_array($dataArray) ) {
