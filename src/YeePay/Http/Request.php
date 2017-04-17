@@ -7,6 +7,8 @@
  */
 namespace YeePay\YeePay\Http;
 
+use YeePay\YeePay\Exceptions\Exception;
+
 class Request {
 
 
@@ -57,14 +59,11 @@ class Request {
         }
 
         foreach ($this->postFile as $k => $v) {
-            switch (true) {
-                case false === $v = realpath(filter_var($v)):
-                case !is_file($v):
-                case !is_readable($v):
-                    continue; // or return false, throw new InvalidArgumentException
-            }
+
             $data = file_get_contents($v);
+
             $v = basename($v);
+
 //        $v = call_user_func("end", explode(DIRECTORY_SEPARATOR, $v));
             $k = str_replace($disallow, "_", $k);
             $v = str_replace($disallow, "_", $v);
@@ -122,6 +121,9 @@ class Request {
         $this->response = curl_exec($this->curlHandle);
         $this->responseCode = curl_getinfo($this->curlHandle, CURLINFO_HTTP_CODE);
         $this->responseInfo =curl_getinfo($this->curlHandle);
+        if($this->response=='') {
+            throw new Exception("请求错误" . $this->responseCode);
+        }
         curl_close ($this->curlHandle) ;
         $this->responseInfo = null;
         return $this->response;

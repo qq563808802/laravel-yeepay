@@ -121,7 +121,11 @@ class ApiRequest {
     }
 
     public function receviceResponse() {
+        if($this->response) {
+
+        }
         $responseJsonArray = json_decode($this->response, true);
+
         if ( array_key_exists("code", $responseJsonArray)
             && "1" != $responseJsonArray["code"] ) {
 
@@ -189,7 +193,6 @@ class ApiRequest {
 
             throw new Exception("response.customError error, errmsg = [" . $resultLocale["customError"] . "], errcode = [" . $resultLocale["code"] . "].", $result["code"]);
         }
-
         return collect($resultLocale);
     }
 

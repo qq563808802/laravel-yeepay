@@ -6,6 +6,7 @@
  * Time: 18:42
  */
 namespace YeePay\Ledger;
+use YeePay\YeePay\Exceptions\Exception;
 use YeePay\YeePay\Http\ApiRequest;
 
 class Ledger extends ApiRequest
@@ -38,14 +39,6 @@ class Ledger extends ApiRequest
     static $uploadNeedResponseHmac =array(0 => "customernumber", 1 => "ledgerno", 2 => "code", 3 => "filetype");
 
 
-    /**
-     * 转账接口
-     */
-    const TRANSFER_URL = '/transfer';
-    static $transferNeedRequestHmac =array(0 => "requestid");
-    static $transferMustFillRequest = array(0 => "requestid");
-    static $transferRequest = array(0 => "requestid");
-    static $transferNeedResponseHmac =  array(0 => "customernumber", 1 => "requestid", 2 => "code", 3 => "ledgerno", 4 => "amount", 5 => "status");
 
     /**
      * 分账接口
@@ -56,17 +49,27 @@ class Ledger extends ApiRequest
     static $divideRequest = array(0 => "requestid", 1 => "orderrequestid", 2 => "divideinfo");
     static $divideNeedResponseHmac =  array(0 => "customernumber", 1 => "requestid", 2 => "code");
 
-
+    /**
+     * 余额查询
+     * @param array $params
+     * @return \Illuminate\Support\Collection
+     *
+     */
+    const BALANCE_URL = '/queryBalance';
+    static $balanceNeedRequestHmac =  array(0 => "ledgerno");
+    static $balanceMustFillRequest = array();
+    static $balanceRequest =  array(0 => "ledgerno");
+    static $balanceNeedResponseHmac =  array(0 => "customernumber", 1 => "code", 2 => "balance", 3 => "ledgerbalance");
 
 
     public function register(array $params)
     {
+
         $this->setUrl(self::REGISTER_URL);
         $this->setNeedRequest(self::$regRequest);
         $this->setNeedRequestHmac(self::$regNeedRequestHmac);
         $this->setNeedResponseHmac(self::$regNeedResponseHmac);
         $this->setPost($params);
-
         $response = $this->send();
         return $response;
     }
@@ -100,21 +103,7 @@ class Ledger extends ApiRequest
         return $response;
     }
 
-    /**
-     * 转账接口
-     * @param $ledgerno
-     * @param $amount
-     */
-    public function transfer($ledgerno,$amount) {
-        $this->setUrl(self::EDIT_URL);
-        $this->setNeedRequest(self::$transferRequest);
-        $this->setNeedRequestHmac(self::$transferNeedRequestHmac);
-        $this->setNeedResponseHmac(self::$transferNeedResponseHmac);
-        $this->setMustFillRequest(self::$transferMustFillRequest);
-        $this->setPost(['requestid'=>date("YmdHis") . rand(0000,9999),'ledgerno'=>$ledgerno,'amount'=>$amount]);
-        $response = $this->send();
-        return $response;
-    }
+
 
     /**
      * 分账接口
@@ -125,7 +114,7 @@ class Ledger extends ApiRequest
      */
 
     public function divide($requestid,$orderrequestid,$ledgerno,$amount) {
-        $this->setUrl(self::EDIT_URL);
+        $this->setUrl(self::DIVIDE_URL);
         $this->setNeedRequest(self::$divideRequest);
         $this->setNeedRequestHmac(self::$divideNeedRequestHmac);
         $this->setNeedResponseHmac(self::$divideNeedResponseHmac);
@@ -133,5 +122,37 @@ class Ledger extends ApiRequest
         $this->setPost(['requestid'=>$requestid,'orderrequestid'=>$orderrequestid,'divideinfo'=>"$ledgerno:AMOUNT{$amount}"]);
         $response = $this->send();
         return $response;
+    }
+
+    private function balanceSource($ledgerno) {
+            $this->setUrl(self::BALANCE_URL);
+            $this->setNeedRequest(self::$balanceRequest);
+            $this->setNeedRequestHmac(self::$balanceNeedRequestHmac);
+            $this->setNeedResponseHmac(self::$balanceNeedResponseHmac);
+            $this->setMustFillRequest(self::$balanceMustFillRequest);
+            $this->setPost(['ledgerno'=>$ledgerno]);
+            return $response = $this->send();
+
+
+    }
+
+    public function balanceMaster() {
+        $data = $this->balanceSource('');
+        return isset($data['balance']) ? $data['balance'] : "";
+    }
+
+    /**
+     * 查询余额
+     * @param $ledgerno
+     * @return \Illuminate\Support\Collection
+     * 查询账号余额
+     */
+    public function balance($ledgerno) {
+        $data = $this->balanceSource($ledgerno);
+        if(!isset($data['ledgerbalance'])) {
+            return '';
+        }
+        $amount = explode(':',$data['ledgerbalance']);
+        return $amount[1];
     }
 }
