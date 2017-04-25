@@ -54,7 +54,6 @@ class YeePay extends Container
         $this->registerBase();
 
         $this->initializeLogger();
-        Log::debug('Current configuration:', $config);
     }
 
     /**

@@ -10,6 +10,7 @@ namespace YeePay\YeePay\Http;
 
 use YeePay\Config;
 use YeePay\YeePay\Exceptions\Exception;
+use YeePay\YeePay\Util\Log;
 use YeePay\YeePay\Util\Util;
 
 class ApiRequest {
@@ -19,8 +20,8 @@ class ApiRequest {
     public $postField;
 
     public $postFile = [];
-
-
+    //提交过来的POST
+    public $postData = [];
     public $responseInfo;
 
     public $responseCode;
@@ -72,7 +73,7 @@ class ApiRequest {
 
 
     public function setPost($post) {
-
+        $this->postData = $post;
         $this->postField = $this->getPostData($post);
     }
 
@@ -115,9 +116,15 @@ class ApiRequest {
     }
 
     public function send() {
+       Log::debug("Request:{$this->requestUrl}" . json_encode($this->postData,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+       if($this->postFile) {
+            Log::debug("File:{$this->requestUrl}" . json_encode($this->postFile,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
+       }
        $this->response =  (new Request($this->requestUrl,$this->postField,$this->postFile))->send();
 
-        return $this->receviceResponse();
+       $response =  $this->receviceResponse();
+
+       return$response;
     }
 
     public function receviceResponse() {
@@ -125,7 +132,6 @@ class ApiRequest {
 
         }
         $responseJsonArray = json_decode($this->response, true);
-
         if ( array_key_exists("code", $responseJsonArray)
             && "1" != $responseJsonArray["code"] ) {
 
@@ -139,6 +145,7 @@ class ApiRequest {
 
         $responseData = Util::getDeAes($responseJsonArray["data"],$this->config['aesKey']);
         $result = json_decode($responseData, true);
+
         //进行UTF-8->GBK转码
         $resultLocale = array();
         foreach ( $result as $rKey => $rValue ) {
@@ -152,7 +159,7 @@ class ApiRequest {
 
         }
         $this->responseData = $resultLocale;
-
+        Log::debug("Response:{$this->requestUrl}" . json_encode($this->responseData,JSON_UNESCAPED_UNICODE|JSON_UNESCAPED_SLASHES));
 
 
         if (  "1" != $result["code"] ) {
