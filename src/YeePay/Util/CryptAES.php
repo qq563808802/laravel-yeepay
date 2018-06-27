@@ -54,7 +54,7 @@ class CryptAES
             $func_name = __CLASS__ . '::' . $this->pad_method . '_' . $ext . 'pad';
             if ( is_callable($func_name) )
             {
-                $size = mcrypt_get_block_size($this->cipher, $this->mode);
+                $size = @mcrypt_get_block_size($this->cipher, $this->mode);
                 return call_user_func($func_name, $str, $size);
             }
         }
@@ -76,7 +76,7 @@ class CryptAES
     public function encrypt($str)
     {
         $str = $this->pad($str);
-        $td = mcrypt_module_open($this->cipher, '', $this->mode, '');
+        $td = @mcrypt_module_open($this->cipher, '', $this->mode, '');
 
         if ( empty($this->iv) )
         {
@@ -87,33 +87,33 @@ class CryptAES
             $iv = $this->iv;
         }
 
-        mcrypt_generic_init($td, $this->secret_key, $iv);
-        $cyper_text = mcrypt_generic($td, $str);
+        @mcrypt_generic_init($td, $this->secret_key, $iv);
+        $cyper_text = @mcrypt_generic($td, $str);
         $rt = bin2hex($cyper_text);
-        mcrypt_generic_deinit($td);
-        mcrypt_module_close($td);
+        @mcrypt_generic_deinit($td);
+        @mcrypt_module_close($td);
 
         return $rt;
     }
 
 
     public function decrypt($str){
-        $td = mcrypt_module_open($this->cipher, '', $this->mode, '');
+        $td = @mcrypt_module_open($this->cipher, '', $this->mode, '');
 
         if ( empty($this->iv) )
         {
-            $iv = @mcrypt_create_iv(mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
+            $iv = @mcrypt_create_iv(@mcrypt_enc_get_iv_size($td), MCRYPT_RAND);
         }
         else
         {
             $iv = $this->iv;
         }
 
-        mcrypt_generic_init($td, $this->secret_key, $iv);
-        $decrypted_text = mdecrypt_generic($td, self::hex2bin($str));
+        @mcrypt_generic_init($td, $this->secret_key, $iv);
+        $decrypted_text = @mdecrypt_generic($td, self::hex2bin($str));
         $rt = $decrypted_text;
-        mcrypt_generic_deinit($td);
-        mcrypt_module_close($td);
+        @mcrypt_generic_deinit($td);
+        @mcrypt_module_close($td);
 
         return $this->unpad($rt);
     }
